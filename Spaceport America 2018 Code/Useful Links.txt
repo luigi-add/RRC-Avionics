@@ -1,0 +1,3 @@
+https://learn.adafruit.com/adafruit-bmp280-barometric-pressure-plus-temperature-sensor-breakout/arduino-test
+https://learn.sparkfun.com/tutorials/mpu-9250-hookup-guide/all
+https://learn.adafruit.com/adafruit-micro-sd-breakout-board-card-tutorial?view=all
