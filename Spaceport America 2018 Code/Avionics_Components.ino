@@ -1,11 +1,12 @@
 // ============= NAME TBD ROCKET 2019 ============== //
+// ================================================= //
 //     ---- Current Implemented Components: ----     //
-//     IMU, Pressure & Temp Sensor, SD Card Reader   //
-//     Last Update: 14/02/2019                       //
+// IMU, Pressure & Temp Sensor, SD Card Reader       //
+// Last Update: 14/02/2019                           //
 
 //     ----- What still needs to be done?: -----     //
-//     GPS integration, ground station integration   //
-//     radio integration                             //
+// GPS integration, ground station integration       //
+// radio integration                                 //
 
 #include <Wire.h>
 #include <SPI.h>
