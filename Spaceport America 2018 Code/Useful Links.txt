@@ -2,3 +2,7 @@ https://learn.adafruit.com/adafruit-bmp280-barometric-pressure-plus-temperature-
 https://learn.sparkfun.com/tutorials/mpu-9250-hookup-guide/all
 https://learn.adafruit.com/adafruit-micro-sd-breakout-board-card-tutorial?view=all
 http://files.rfdesign.com.au/Files/documents/RFD900%20DataSheet.pdf
+
+RFD Config Tutorials
+https://www.youtube.com/watch?v=ScGBIaPwLKU
+https://www.youtube.com/watch?v=PMCJu0I4NQI
