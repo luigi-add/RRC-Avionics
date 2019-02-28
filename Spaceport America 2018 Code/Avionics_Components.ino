@@ -1,13 +1,5 @@
-// ============= NAME TBD ROCKET 2019 ============== //
-// ================================================= //
-//     ---- Current Implemented Components: ----     //
-// IMU, Pressure & Temp Sensor, SD Card Reader       //
-// Last Update: 14/02/2019                           //
-
-//     ----- What still needs to be done?: -----     //
-// GPS integration, ground station integration       //
-// radio integration                                 //
-
+// Current Implemented Components:
+// IMU, Pressure & Temp Sensor, SD Card Reader
 #include <Wire.h>
 #include <SPI.h>
 #include <Adafruit_BMP280.h>
@@ -17,9 +9,17 @@ Adafruit_BMP280 bmp; // I2C
 #define SerialPort Serial
 MPU9250_DMP imu;
 
+#include <SD.h>
+File dataFile;
+
+// CS 50
+// DI 51
+// DO 52
+// CLK 53
+
 void setup() {
   Serial.begin(115200);
-  
+
   /* ----------------------------- Sensor --------------------------- */
 
   Serial.println(F("Avionics Sensor and IMU"));
@@ -71,33 +71,93 @@ void setup() {
   // set using the setCompassSampleRate() function.
   // This value can range between: 1-100Hz
   imu.setCompassSampleRate(10); // Set mag rate to 10Hz
+
+
+  /* ---------------------------- SD Log ----------------------------- */
+  // Pins for Mega2560
+  // CS 50
+  // DI 51
+  // DO 52
+  // CLK 53
+  Serial.print("Initializing SD card...");
+  // make sure that the default chip select pin is set to
+  // output, even if you don't use it:
+  pinMode(SS, OUTPUT);
+
+  // see if the card is present and can be initialized:
+  if (!SD.begin(50, 51, 52, 53)) {
+    Serial.println("Card failed, or not present");
+    // don't do anything more:
+    while (1) ;
+  }
+  Serial.println("card initialized.");
+
+  // Open up the file we're going to log to!
+  dataFile = SD.open("datalog.txt", FILE_WRITE);
+  if (! dataFile) {
+    Serial.println("error opening datalog.txt");
+    // Wait forever since we cant write data
+    while (1) ;
+  }
+
 }
 
 void loop() {
-  printSensorData();
-  
+  printSensorData(); // Sensor Data output
+
   if ( imu.dataReady() )
   {
     imu.update(UPDATE_ACCEL | UPDATE_GYRO | UPDATE_COMPASS);
-    printIMUData();
+    printIMUData(); // IMU Data output
   }
+
+  //  // Data logging output
+  //  String dataString = "";
+  //  // read three sensors and append to the string:
+  //  for (int analogPin = 0; analogPin < 3; analogPin++) {
+  //    int sensor = analogRead(analogPin);
+  //    dataString += String(sensor);
+  //    if (analogPin < 2) {
+  //      dataString += ",";
+  //    }
+  //  }
+  //
+  //  dataFile.println(dataString);
+  //
+  //  // print to the serial port too:
+  //  Serial.println(dataString);
+
+  // The following line will 'save' the file to the SD card after every
+  // line of data - this will use more power and slow down how much data
+  // you can read but it's safer!
+  // If you want to speed up the system, remove the call to flush() and it
+  // will save the file only every 512 bytes - every time a sector on the
+  // SD card is filled with data.
+  dataFile.flush();
+
   delay(1000);
 }
 
 void printSensorData(void) {
-    Serial.print(F("Temperature = "));
-    Serial.print(bmp.readTemperature());
-    Serial.println(" *C");
+  // Write to Serial
+  Serial.print(F("Temperature = "));
+  Serial.print(bmp.readTemperature());
+  Serial.println(" *C");
 
-    Serial.print(F("Pressure = "));
-    Serial.print(bmp.readPressure());
-    Serial.println(" Pa");
+  Serial.print(F("Pressure = "));
+  Serial.print(bmp.readPressure());
+  Serial.println(" Pa");
 
-    Serial.print(F("Approx altitude = "));
-    Serial.print(bmp.readAltitude(1013.25)); /* Adjusted to local forecast! */
-    Serial.println(" m");
+  Serial.print(F("Approx altitude = "));
+  Serial.print(bmp.readAltitude(1013.25)); /* Adjusted to local forecast! */
+  Serial.println(" m");
 
-    Serial.println();
+  Serial.println();
+
+  // Write to file
+  dataFile.println(bmp.readTemperature());
+  dataFile.println(bmp.readPressure());
+  dataFile.println(bmp.readAltitude(1013.25));
 }
 
 void printIMUData(void)
@@ -127,4 +187,16 @@ void printIMUData(void)
                      String(magY) + ", " + String(magZ) + " uT");
   SerialPort.println("Time: " + String(imu.time) + " ms");
   SerialPort.println();
+
+  // Write to file
+  dataFile.println(accelX);
+  dataFile.println(accelY);
+  dataFile.println(accelZ);
+  dataFile.println(gyroX);
+  dataFile.println(gyroY);
+  dataFile.println(gyroZ);
+  dataFile.println(magX);
+  dataFile.println(magY);
+  dataFile.println(magZ);
+  dataFile.println(imu.time);
 }
