@@ -6,3 +6,6 @@ http://files.rfdesign.com.au/Files/documents/RFD900%20DataSheet.pdf
 RFD Config Tutorials
 https://www.youtube.com/watch?v=ScGBIaPwLKU
 https://www.youtube.com/watch?v=PMCJu0I4NQI
+
+RFD Tool (v1.5)
+http://files.rfdesign.com.au/tools/
