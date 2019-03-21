@@ -29,7 +29,7 @@ if (GPS.newNMEAreceived()) {
     Serial.print(GPS.latitudeDegrees, 4);
     Serial.print(", ");
     Serial.println(GPS.longitudeDegrees, 4);
-
+    Serial.print("Altitude: "); Serial.println(GPS.altitude);
 
   }
 
