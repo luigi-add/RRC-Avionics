@@ -1,9 +1,9 @@
 // Current Implemented Components:
-// IMU, Pressure & Temp Sensor, SD Card Reader
+// IMU, Pressure & Temp Sensor, SD Card Reader, RFD, GPS, Buzzer
 #include <Wire.h>
 #include <SPI.h>
-//#include <Adafruit_GPS.h>
-//#include <SoftwareSerial.h>
+// #include <Adafruit_GPS.h>
+// #include <SoftwareSerial.h>
 #include <Adafruit_BMP280.h>
 Adafruit_BMP280 bmp; // I2C
 
@@ -11,8 +11,8 @@ Adafruit_BMP280 bmp; // I2C
 #define SerialPort Serial
 MPU9250_DMP imu;
 
-//SoftwareSerial mySerial(11, 10); // For gps serial
-//Adafruit_GPS GPS(&mySerial);
+// SoftwareSerial mySerial(10, 11); //  GPS TX, RX --> Controller RX, TX
+// Adafruit_GPS GPS(&mySerial);
 
 #include <SD.h>
 Sd2Card card;
@@ -101,37 +101,59 @@ void setup() {
   // set using the setCompassSampleRate() function.
   // This value can range between: 1-100Hz
   imu.setCompassSampleRate(10); // Set mag rate to 10Hz
+  
   /* ----------------------------- GPS ------------------------------- */
-
-  //  GPS.begin(9600);
-  //  // Setup recommended minimum data collection
-  //  GPS.sendCommand(PMTK_SET_NMEA_OUTPUT_RMCGGA);
-  //  // Set the update rate
-  //  GPS.sendCommand(PMTK_SET_NMEA_UPDATE_1HZ);   // 1 Hz update rate
+//    GPS.begin(9600);
+//    // Setup recommended minimum data collection
+//    GPS.sendCommand(PMTK_SET_NMEA_OUTPUT_RMCGGA);
+//    // Set the update rate
+//    GPS.sendCommand(PMTK_SET_NMEA_UPDATE_1HZ);   // 1 Hz update rate
 
 }
 
 uint32_t timer = millis(); // uses millis function for timing
-float interval = 5000; // sets interval time in seconds
+float interval = 10000; // sets interval time in seconds
 
 void loop() {
-
-  // if millis() or timer wraps around, we'll just reset it
+ 
+  char c = GPS.read();
+  if (GPS.newNMEAreceived()) {
+    if (!GPS.parse(GPS.lastNMEA()))   // this also sets the newNMEAreceived() flag to false
+      return;  // we can fail to parse a sentence in which case we should just wait for another
+  }
+  
+  // if millis() resets, just reset timer
   if (timer > millis())
     timer = millis();
-  // approximately every interval or so, print out the current stats
+  // approximately every interval or so, print out the current data set
   if (millis() - timer > interval) {
     timer = millis(); // reset the timer
-    
+
+//    if (GPS.fix) { // GPS Data output
+//     Serial.println(GPS.latitudeDegrees, 4);
+//      Serial.println(GPS.longitudeDegrees, 4);
+//      Serial.println(GPS.altitude);
+//      Serial.println(GPS.speed); // knots
+//     Serial.println((int)GPS.satellites);
+//    }
+//    else { // return 0s if gps doesn't have a fix
+//      Serial.println(0);
+//      Serial.println(0);
+//      Serial.println(0);
+//      Serial.println(0);
+//      Serial.println(0);
+//    }
+        
     printSensorData(); // Sensor Data output
 
-    if ( imu.dataReady() )
+    if (imu.dataReady())
     {
       imu.update(UPDATE_ACCEL | UPDATE_GYRO | UPDATE_COMPASS);
       printIMUData(); // IMU Data output
     }
-    
+    tone(8, 1047, 150); // plays a C6 for 200 ms
   }
+
   dataFile.flush();
 }
 
@@ -145,7 +167,7 @@ void printSensorData(void) {
   // Write to file
   dataFile.println(bmp.readTemperature());
   dataFile.println(bmp.readPressure());
-  dataFile.println(bmp.readAltitude(997));
+  dataFile.println(bmp.readAltitude(relP));
 }
 
 void printIMUData(void)
