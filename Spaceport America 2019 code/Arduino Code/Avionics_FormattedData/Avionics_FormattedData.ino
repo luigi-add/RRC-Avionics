@@ -8,11 +8,14 @@
 Adafruit_BMP280 bmp; // I2C
 
 #include <SparkFunMPU9250-DMP.h>
-#define SerialPort Serial
 MPU9250_DMP imu;
 
-SoftwareSerial mySerial(10, 11); //  GPS TX, RX --> Controller RX, TX
-Adafruit_GPS GPS(&mySerial);
+// below = software serial
+//SoftwareSerial mySerial(10, 11); //  GPS TX, RX --> Controller RX, TX
+//Adafruit_GPS GPS(&mySerial);
+
+// below = hardware serial
+Adafruit_GPS GPS(&Serial1);
 
 #include <SD.h>
 Sd2Card card;
@@ -70,9 +73,9 @@ void setup() {
   {
     while (1)
     {
-      SerialPort.println("Unable to communicate with MPU-9250");
-      SerialPort.println("Check connections, and try again.");
-      SerialPort.println();
+      Serial.println("Unable to communicate with MPU-9250");
+      Serial.println("Check connections, and try again.");
+      Serial.println();
       delay(5000);
     }
   }
@@ -101,27 +104,27 @@ void setup() {
   // set using the setCompassSampleRate() function.
   // This value can range between: 1-100Hz
   imu.setCompassSampleRate(10); // Set mag rate to 10Hz
-  
+
   /* ----------------------------- GPS ------------------------------- */
-    GPS.begin(9600);
-    // Setup recommended minimum data collection
-    GPS.sendCommand(PMTK_SET_NMEA_OUTPUT_RMCGGA);
-    // Set the update rate
-    GPS.sendCommand(PMTK_SET_NMEA_UPDATE_1HZ);   // 1 Hz update rate
+  GPS.begin(9600);
+  // Setup recommended minimum data collection
+  GPS.sendCommand(PMTK_SET_NMEA_OUTPUT_RMCGGA);
+  // Set the update rate
+  GPS.sendCommand(PMTK_SET_NMEA_UPDATE_1HZ);   // 1 Hz update rate
 
 }
 
-uint32_t timer = millis(); // uses millis function for timing
-float interval = 10000; // sets interval time in seconds
+unsigned long timer = millis(); // uses millis function for timing
+long interval = 500; // sets interval time in milliseconds
 
 void loop() {
- 
+
   char c = GPS.read();
   if (GPS.newNMEAreceived()) {
     if (!GPS.parse(GPS.lastNMEA()))   // this also sets the newNMEAreceived() flag to false
       return;  // we can fail to parse a sentence in which case we should just wait for another
   }
-  
+
   // if millis() resets, just reset timer
   if (timer > millis())
     timer = millis();
@@ -129,26 +132,11 @@ void loop() {
   if (millis() - timer > interval) {
     timer = millis(); // reset the timer
 
-    if (GPS.fix) { // GPS Data output
-      Serial.println(GPS.latitudeDegrees, 4);
-      Serial.println(GPS.longitudeDegrees, 4);
-      Serial.println(GPS.altitude);
-      Serial.println(GPS.speed); // knots
-      Serial.println((int)GPS.satellites);
-    }
-    else { // return 0s if gps doesn't have a fix
-      Serial.println(0);
-      Serial.println(0);
-      Serial.println(0);
-      Serial.println(0);
-      Serial.println(0);
-    }
-        
-    printSensorData(); // Sensor Data output
-
     if (imu.dataReady())
     {
       imu.update(UPDATE_ACCEL | UPDATE_GYRO | UPDATE_COMPASS);
+      printGPSData(); // GPS Data output
+      printSensorData(); // Sensor Data output
       printIMUData(); // IMU Data output
     }
     tone(8, 1047, 150); // plays a C6 for 200 ms
@@ -156,7 +144,19 @@ void loop() {
 
   dataFile.flush();
 }
-
+void printGPSData(void) {
+  // Write to Serial
+  Serial.println(GPS.latitudeDegrees, 4);
+  Serial.println(GPS.longitudeDegrees, 4);
+  Serial.println(GPS.speed); // knots
+  Serial.println((int)GPS.satellites);
+  
+  // Write to File
+  dataFile.println(GPS.latitudeDegrees, 4);
+  dataFile.println(GPS.longitudeDegrees, 4);
+  dataFile.println(GPS.speed);
+  dataFile.println((int)GPS.satellites);
+}
 void printSensorData(void) {
   // Write to Serial
   static float relP = bmp.readPressure() / 100; // sets relative pressure point from initial pressure reading
@@ -164,6 +164,7 @@ void printSensorData(void) {
   Serial.println(bmp.readPressure()); // Pa
   // Toronto = 997 hPa, Albaquerque = 1009 hPa
   Serial.println(bmp.readAltitude(relP)); // Relative altitude, m
+
   // Write to file
   dataFile.println(bmp.readTemperature());
   dataFile.println(bmp.readPressure());
