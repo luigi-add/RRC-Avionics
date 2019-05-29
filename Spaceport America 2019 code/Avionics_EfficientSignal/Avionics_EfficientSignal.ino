@@ -15,7 +15,7 @@ SdFile root;
 int CSpin = 53;
 File dataFile;
 unsigned long timer = millis(); // uses millis function for timing
-long interval = 1000; // sets interval time in milliseconds
+long interval = 500; // sets interval time in milliseconds
 int LC = 0; // loop counter
 
 void setup() {
@@ -28,7 +28,7 @@ void setup() {
   // DO 50
   // CLK 52
   pinMode(CSpin, OUTPUT);
-  delay(1000); // give sd card some time
+  delay(500);
 
   if (!SD.begin(CSpin)) {
     Serial.println("Card failed, or not present");
@@ -40,7 +40,7 @@ void setup() {
     Serial.println("error opening datalog.txt");
     while (1) ;
   }
-  
+
   dataFile.println("Time (ms),Latitude,Longitude,Speed (kt),"
                    "AccelX (g),AccelY,AccelZ,"
                    "GyroX (dps),GyroY,GyroZ,"
@@ -109,6 +109,7 @@ void loop() {
   float alt = bmp.readAltitude(relP); // m
 
   /*======================================== Write to Serial & Save to SD ========================================*/
+
   if (timer > millis())
     timer = millis();
   // approximately every interval or so, print out the current data set
@@ -136,8 +137,8 @@ void loop() {
       serialFloatPrint(prs);
       serialFloatPrint(alt);
 
-      dataFile.println();
-      
+      dataFile.println(); // newline in datafile
+
       LC = LC + 1; // Increment loop count
       if (LC > 50) { // every 50 loops, buzzer plays
         tone(8, 1047, 150); // plays a C6 on pin 8 for 150 ms
@@ -148,7 +149,7 @@ void loop() {
   dataFile.flush();
 }
 
-void serialFloatPrint(float f) {
+void serialFloatPrint(float f) { // Converts floats to bytes and writes them to serial
   byte * b = (byte *) &f;
   //  Serial.print("f:"); // data type
   Serial.write(b[0]);
