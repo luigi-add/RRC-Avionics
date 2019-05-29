@@ -1,4 +1,4 @@
-# src: https://www.thepoorengineer.com/en/arduino-python-plot/?singlepage=1
+#!/usr/bin/env python
 
 from threading import Thread
 import serial
@@ -6,7 +6,7 @@ import time
 import collections
 import matplotlib.pyplot as plt
 import matplotlib.animation as animation
-import os, time, struct
+import struct
 import copy
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolbar2Tk
 import tkinter as Tk
@@ -15,7 +15,7 @@ import pandas as pd
 
 
 class serialPlot:
-    def __init__(self, serialPort='COM5', serialBaud=115200, plotLength=100, dataNumBytes=2, numPlots=1):
+    def __init__(self, serialPort='/dev/ttyUSB0', serialBaud=38400, plotLength=100, dataNumBytes=2, numPlots=1):
         self.port = serialPort
         self.baud = serialBaud
         self.plotMaxLength = plotLength
@@ -35,7 +35,7 @@ class serialPlot:
         self.thread = None
         self.plotTimer = 0
         self.previousTimer = 0
-        self.csvData = []
+        # self.csvData = []
 
         print('Trying to connect to: ' + str(serialPort) + ' at ' + str(serialBaud) + ' BAUD.')
         try:
@@ -53,21 +53,18 @@ class serialPlot:
                 time.sleep(0.1)
 
     def getSerialData(self, frame, lines, lineValueText, lineLabel, timeText):
-        currentTimer = time.process_time()
+        currentTimer = time.clock()
         self.plotTimer = int((currentTimer - self.previousTimer) * 1000)     # the first reading will be erroneous
         self.previousTimer = currentTimer
         timeText.set_text('Plot Interval = ' + str(self.plotTimer) + 'ms')
         privateData = copy.deepcopy(self.rawData[:])    # so that the 3 values in our plots will be synchronized to the same sample time
         for i in range(self.numPlots):
             data = privateData[(i*self.dataNumBytes):(self.dataNumBytes + i*self.dataNumBytes)]
-            value,  = struct.unpack(self.dataType, data) # unpacks single element tuple
+            value,  = struct.unpack(self.dataType, data)
             self.data[i].append(value)    # we get the latest data point and append it to our array
             lines[i].set_data(range(self.plotMaxLength), self.data[i])
             lineValueText[i].set_text('[' + lineLabel[i] + '] = ' + str(value))
-        self.csvData.append([self.data[0][-1], self.data[1][-1], self.data[2][-1]])
-        print(self.csvData)
-        df = pd.DataFrame(self.csvData)
-        df.to_csv(r'C:\Users\TrevorTai\Desktop\data.csv')
+        # self.csvData.append([self.data[0][-1], self.data[1][-1], self.data[2][-1]])
 
     def backgroundThread(self):    # retrieve data
         time.sleep(1.0)  # give some buffer time for retrieving data
@@ -75,14 +72,15 @@ class serialPlot:
         while (self.isRun):
             self.serialConnection.readinto(self.rawData)
             self.isReceiving = True
-            # print(self.rawData)
+            #print(self.rawData)
 
     def close(self):
         self.isRun = False
         self.thread.join()
         self.serialConnection.close()
         print('Disconnected...')
-
+        # df = pd.DataFrame(self.csvData)
+        # df.to_csv('/home/rikisenia/Desktop/data.csv')
 
 
 class Window(Frame):
@@ -101,21 +99,21 @@ class Window(Frame):
         canvas.get_tk_widget().pack(side=Tk.TOP, fill=Tk.BOTH, expand=1)
 
 def main():
-    portName = 'COM5'
+    portName = 'COM4'
     # portName = '/dev/ttyUSB0'
     baudRate = 115200
     maxPlotLength = 100     # number of points in x-axis of real time plot
     dataNumBytes = 4        # number of bytes of 1 data point
     numPlots = 3            # number of plots in 1 graph
     s = serialPlot(portName, baudRate, maxPlotLength, dataNumBytes, numPlots)   # initializes all required variables
-    s.readSerialStart()     # starts background thread
+    s.readSerialStart()                                               # starts background thread
 
     # plotting starts below
     pltInterval = 50    # Period at which the plot animation updates [ms]
     xmin = 0
     xmax = maxPlotLength
-    ymin = -(3)
-    ymax = 3
+    ymin = -(1)
+    ymax = 1
     fig = plt.figure(figsize=(10, 8))
     ax = plt.axes(xlim=(xmin, xmax), ylim=(float(ymin - (ymax - ymin) / 10), float(ymax + (ymax - ymin) / 10)))
     ax.set_title('Arduino Accelerometer')
