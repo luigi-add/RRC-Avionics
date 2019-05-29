@@ -1,0 +1,23 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.28803.452
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{888888A0-9F3D-457C-B088-3A5042F75D52}") = "GroundStationTest", "GroundStationTest\GroundStationTest.pyproj", "{48065B12-7FE0-48C8-973C-F114710537A8}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{48065B12-7FE0-48C8-973C-F114710537A8}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{48065B12-7FE0-48C8-973C-F114710537A8}.Release|Any CPU.ActiveCfg = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {47CC461F-A72C-41D8-BB41-F843109FFD91}
+	EndGlobalSection
+EndGlobal
