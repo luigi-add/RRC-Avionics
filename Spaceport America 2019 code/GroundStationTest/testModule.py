@@ -10,12 +10,16 @@ import struct
 import copy
 import os
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolbar2Tk
-import tkinter as Tk
+import tkinter as tk
+from tkinter import font  as tkfont
 from tkinter.ttk import Frame
 import pandas as pd
 
+#height = 480
+#width = 320
 
 class serialPlot:
+    # Initialization
     def __init__(self, serialPort, serialBaud, plotLength, dataNumBytes, numData, IMU_numPlots):
         self.port = serialPort
         self.baud = serialBaud
@@ -67,6 +71,7 @@ class serialPlot:
             while self.isReceiving != True:
                 time.sleep(0.1)
 
+    # Read IMU Data
     def getIMUData(self, frame, lines, lineValueText, lineLabel, timeText, byteIndex):
         currentTimer = time.process_time()
         self.plotTimer = int((currentTimer - self.previousTimer) * 1000)     # the first reading will be erroneous
@@ -95,12 +100,12 @@ class serialPlot:
                              self.dataList[15][-1]])
         df = pd.DataFrame(self.csvData)
         df.to_csv(self.file_path, header=self.HEADER, index=False)
-        print(len(self.csvData))
+        #print(len(self.csvData))
         if (len(self.csvData) > self.csvMax): # only saves the last x amount of data
             self.csvData = []
 
     def backgroundThread(self):    # retrieve data
-        time.sleep(1.0)  # give some buffer time for retrieving data
+        time.sleep(1.0)            # give some buffer time for retrieving data
         self.serialConnection.reset_input_buffer()
         while (self.isRun):
             self.serialConnection.readinto(self.rawData)
@@ -122,26 +127,94 @@ class Window(Frame):
         self.setPoint = None
         self.master = master        # a reference to the master window
         self.serialReference = SerialReference      # keep a reference to our serial connection so that we can use it for bi-directional communicate from this class
-        self.initWindow(figure)     # initialize the window with our settings
+        self.initWindow(figure)     # initialize the window with our settings    
 
     def initWindow(self, figure):
         self.master.title("Real Time Plot")
         canvas = FigureCanvasTkAgg(figure, master=self.master)
         toolbar = NavigationToolbar2Tk(canvas, self.master)
-        canvas.get_tk_widget().pack(side=Tk.TOP, fill=Tk.BOTH, expand=1)
+        canvas.get_tk_widget().pack(side=tk.TOP, fill=tk.BOTH, expand=1)
 
-        lbl1 = Tk.Label(self.master, text="Scaling Factor")
-        lbl1.pack(padx=5, pady=5)
-        self.entry = Tk.Entry(self.master)
-        self.entry.insert(0, '1.0')     # (index, string)
-        self.entry.pack(padx=5)
-        SendButton = Tk.Button(self.master, text='Send', command=self.sendFactorToMCU)
-        SendButton.pack(padx=5)
+class SampleApp(tk.Tk):
+
+    def __init__(self, *args, **kwargs):
+        tk.Tk.__init__(self, *args, **kwargs)
+
+        self.title_font = tkfont.Font(family='Helvetica', size=18, weight="bold", )
+
+        # the container is where we'll stack a bunch of frames
+        # on top of each other, then the one we want visible
+        # will be raised above the others
+        container = Frame(self)
+        container.pack(side="top", fill="both", expand=True)
+        container.grid_rowconfigure(0, weight=1)
+        container.grid_columnconfigure(0, weight=1)
+
+        self.frames = {}
+        for F in (StartPage, PageOne, PageTwo):
+            page_name = F.__name__
+            frame = F(master=container, controller=self)
+            self.frames[page_name] = frame
+
+            # put all of the pages in the same location;
+            # the one on the top of the stacking order
+            # will be the one that is visible.
+            frame.grid(row=0, column=0, sticky="nsew")
+
+        self.show_frame("StartPage")
+
+    def show_frame(self, page_name):
+        '''Show a frame for the given page name'''
+        frame = self.frames[page_name]
+        frame.tkraise()
+
+class StartPage(Frame):
+
+    def __init__(self, master, controller):
+        Frame.__init__(self, master)
+        self.controller = controller
+
+        label = tk.Label(self, text="RYERSON ROCKETRY CLUB", font=controller.title_font)
+        label.pack(side="top", fill="x", pady=10)
+
+        button1 = tk.Button(self, text="View Acceleration Data",
+                            command=lambda: controller.show_frame("PageOne"))
+        button2 = tk.Button(self, text="View Magnetism Data",
+                            command=lambda: controller.show_frame("PageTwo"))
+        button1.pack(side='left')
+        button2.pack(side='left')
+
+    def initWindow(self, figure):
+        self.master.title("Real Time Plot")
+        canvas = FigureCanvasTkAgg(figure, master=self.master)
+        toolbar = NavigationToolbar2Tk(canvas, self.master)
+        canvas.get_tk_widget().pack(side=tk.TOP, fill=tk.BOTH, expand=1)
+
+class PageOne(Frame):
+
+    def __init__(self, master, controller):
+        Frame.__init__(self, master)
+        self.controller = controller
+        label = tk.Label(self, text="Accerlation Data", font=controller.title_font)
+        label.pack(side="top", fill="x", pady=10)
+        button = tk.Button(self, text="Home",
+                           command=lambda: controller.show_frame("StartPage"))
+        button.pack()
 
 
+class PageTwo(Frame):
+
+    def __init__(self, master, controller):
+        Frame.__init__(self, master)
+        self.controller = controller
+        label = tk.Label(self, text="Magnetism Data", font=controller.title_font)
+        label.pack(side="top", fill="x", pady=10)
+        button = tk.Button(self, text="Home",
+                           command=lambda: controller.show_frame("StartPage"))
+        button.pack()
 
 def main():
-    portName = 'COM4'
+    portName = 'COM5'
     # portName = '/dev/ttyUSB0'
     baudRate = 115200
     maxPlotLength = 100     # number of points in x-axis of real time plot
@@ -157,33 +230,32 @@ def main():
     xmax = maxPlotLength
     ymin = -(16)
     ymax = 16
-    fig = plt.figure(figsize=(10, 8))
-    ax = plt.axes(xlim=(xmin, xmax), ylim=(float(ymin - (ymax - ymin) / 10), float(ymax + (ymax - ymin) / 10)))
-    ax.set_title('Arduino Accelerometer')
-    ax.set_xlabel("Time")
-    ax.set_ylabel("Accelerometer Output")
+    #fig = plt.figure(figsize=(10, 8))
+    #ax = plt.axes(xlim=(xmin, xmax), ylim=(float(ymin - (ymax - ymin) / 10), float(ymax + (ymax - ymin) / 10)))
+    #ax.set_title('Arduino Accelerometer')
+    #ax.set_xlabel("Time")
+    #ax.set_ylabel("Accelerometer Output")
 
     # put our plot onto Tkinter's GUI
-    root = Tk.Tk()
-    app = Window(fig, root, s)
+    #root = tk.Tk()
+    #app = Window(fig, root, s)
+    app = SampleApp()
 
-    lineLabel = ['X', 'Y', 'Z']
-    style = ['r-', 'c-', 'b-']  # linestyles for the different plots
-    timeText = ax.text(0.70, 0.95, '', transform=ax.transAxes)
-    lines = []
-    lineValueText = []
-    byteIndex = 16
-    for i in range(IMU_numPlots):
-        lines.append(ax.plot([], [], style[i], label=lineLabel[i])[0])
-        lineValueText.append(ax.text(0.70, 0.90-i*0.05, '', transform=ax.transAxes))
-    anim = animation.FuncAnimation(fig, s.getIMUData, fargs=(lines, lineValueText, lineLabel, timeText, byteIndex), interval=pltInterval)    # fargs has to be a tuple
+    #lineLabel = ['X', 'Y', 'Z']
+    #style = ['r-', 'c-', 'b-']  # linestyles for the different plots
+    #timeText = ax.text(0.70, 0.95, '', transform=ax.transAxes)
+    #lines = []
+    #lineValueText = []
+    #byteIndex = 16
+    #for i in range(IMU_numPlots):
+    #    lines.append(ax.plot([], [], style[i], label=lineLabel[i])[0])
+    #    lineValueText.append(ax.text(0.70, 0.90-i*0.05, '', transform=ax.transAxes))
+    #anim = animation.FuncAnimation(fig, s.getIMUData, fargs=(lines, lineValueText, lineLabel, timeText, byteIndex), interval=pltInterval)    # fargs has to be a tuple
     
-    plt.legend(loc="upper left")
+    #plt.legend(loc="upper left")
 
-
-
-    root.mainloop()   # use this instead of plt.show() since we are encapsulating everything in Tkinter
-
+    #root.mainloop()   # use this instead of plt.show() since we are encapsulating everything in Tkinter
+    app.mainloop() 
     s.close()
 
 

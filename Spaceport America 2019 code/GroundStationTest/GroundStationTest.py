@@ -10,12 +10,16 @@ import struct
 import copy
 import os
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolbar2Tk
-import tkinter as Tk
+import tkinter as tk
+from tkinter import font  as tkfont
 from tkinter.ttk import Frame
 import pandas as pd
 
+#height = 480
+#width = 320
 
 class serialPlot:
+    # Initialization
     def __init__(self, serialPort, serialBaud, plotLength, dataNumBytes, numData, IMU_numPlots):
         self.port = serialPort
         self.baud = serialBaud
@@ -67,6 +71,7 @@ class serialPlot:
             while self.isReceiving != True:
                 time.sleep(0.1)
 
+    # Read IMU Data
     def getIMUData(self, frame, lines, lineValueText, lineLabel, timeText, byteIndex):
         currentTimer = time.process_time()
         self.plotTimer = int((currentTimer - self.previousTimer) * 1000)     # the first reading will be erroneous
@@ -95,12 +100,12 @@ class serialPlot:
                              self.dataList[15][-1]])
         df = pd.DataFrame(self.csvData)
         df.to_csv(self.file_path, header=self.HEADER, index=False)
-        print(len(self.csvData))
+        #print(len(self.csvData))
         if (len(self.csvData) > self.csvMax): # only saves the last x amount of data
             self.csvData = []
 
     def backgroundThread(self):    # retrieve data
-        time.sleep(1.0)  # give some buffer time for retrieving data
+        time.sleep(1.0)            # give some buffer time for retrieving data
         self.serialConnection.reset_input_buffer()
         while (self.isRun):
             self.serialConnection.readinto(self.rawData)
@@ -122,15 +127,13 @@ class Window(Frame):
         self.setPoint = None
         self.master = master        # a reference to the master window
         self.serialReference = SerialReference      # keep a reference to our serial connection so that we can use it for bi-directional communicate from this class
-        self.initWindow(figure)     # initialize the window with our settings
+        self.initWindow(figure)     # initialize the window with our settings    
 
     def initWindow(self, figure):
         self.master.title("Real Time Plot")
         canvas = FigureCanvasTkAgg(figure, master=self.master)
         toolbar = NavigationToolbar2Tk(canvas, self.master)
-        canvas.get_tk_widget().pack(side=Tk.TOP, fill=Tk.BOTH, expand=1)
-
-
+        canvas.get_tk_widget().pack(side=tk.TOP, fill=tk.BOTH, expand=1)
 
 def main():
     portName = 'COM5'
@@ -156,7 +159,7 @@ def main():
     ax.set_ylabel("Accelerometer Output")
 
     # put our plot onto Tkinter's GUI
-    root = Tk.Tk()
+    root = tk.Tk()
     app = Window(fig, root, s)
 
     lineLabel = ['X', 'Y', 'Z']
@@ -172,10 +175,7 @@ def main():
     
     plt.legend(loc="upper left")
 
-
-
     root.mainloop()   # use this instead of plt.show() since we are encapsulating everything in Tkinter
-
     s.close()
 
 
