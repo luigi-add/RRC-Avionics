@@ -5,16 +5,17 @@ import pandas as pd
 import os
 import collections
 file_dir = os.path.dirname(os.path.abspath(__file__))
-csv_folder = 'data files'
+csv_folder = 'dataFiles'
 file_path = os.path.join(file_dir, csv_folder, 'csvData.csv')
 
 # Reads bytes from serial
-ser = serial.Serial('COM4', baudrate = 115200, timeout = 10) # open serial
+ser = serial.Serial('COM5', baudrate = 115200, timeout = 10) # open serial
 numData = 16 # numper of data points
 dataNumBytes = 4 # byte size of each data point
 rawData = bytearray(numData * dataNumBytes) # makes array for byte data, size = (numdata points)*(byte size)
 dataType = 'f' # data type of data
 dataList = []
+dataString = []
 csvData = []
 plotLength = 100
 #HEADER = ['Time (ms)', 'Latitude','Longitude','Speed (kt)',
@@ -26,14 +27,23 @@ plotLength = 100
 
 for i in range(numData):   # give an array for each type of data and store them in a list
             dataList.append(collections.deque([0] * plotLength, maxlen=plotLength))
+            dataString.append(collections.deque([0] * plotLength, maxlen=plotLength))
 while 1:
     ser.readinto(rawData) # reads serial
     privateData = copy.deepcopy(rawData[:]) # makes copy of rawData
     for i in range(numData):
         data = privateData[(i*dataNumBytes):(dataNumBytes + i*dataNumBytes)] # slices array as there are 'dataNumBytes' bytes per 'numData' points 
         value, = struct.unpack(dataType, data)
-        print(value)
+        dataString[i].append(round(value,3))
         dataList[i].append(value) # makes data array
+    x=[dataString[0][-1],dataString[1][-1],dataString[2][-1],
+                   dataString[3][-1],dataString[4][-1],dataString[5][-1],
+                   dataString[6][-1],dataString[7][-1],dataString[8][-1],
+                   dataString[9][-1],dataString[10][-1],dataString[11][-1],
+                   dataString[12][-1],dataString[13][-1],dataString[14][-1],
+                   dataString[15][-1]]
+    
+    print(x)
 
 
     #csvData.append([dataList[0][-1],dataList[1][-1],dataList[2][-1],
