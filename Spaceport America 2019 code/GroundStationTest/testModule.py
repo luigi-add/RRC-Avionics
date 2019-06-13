@@ -214,15 +214,15 @@ class PageTwo(Frame):
         button.pack()
 
 def main():
-    portName = 'COM5'
+    # portName = 'COM3'
     # portName = '/dev/ttyUSB0'
     baudRate = 115200
     maxPlotLength = 100     # number of points in x-axis of real time plot
     dataNumBytes = 4        # number of bytes of 1 data point
     numData = 16            # number of data points
     IMU_numPlots = 3            # number of plots in 1 graph
-    s = serialPlot(portName, baudRate, maxPlotLength, dataNumBytes, numData, IMU_numPlots)   # initializes all required variables
-    s.readSerialStart()                                               # starts background thread
+    # s = serialPlot(portName, baudRate, maxPlotLength, dataNumBytes, numData, IMU_numPlots)   # initializes all required variables
+   #  s.readSerialStart()                                               # starts background thread
 
     # plotting starts below
     pltInterval = 50    # Period at which the plot animation updates [ms]

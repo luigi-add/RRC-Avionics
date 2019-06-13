@@ -9,7 +9,7 @@ csv_folder = 'data files'
 file_path = os.path.join(file_dir, csv_folder, 'csvData.csv')
 
 # Reads bytes from serial
-ser = serial.Serial('COM4', baudrate = 115200, timeout = 10) # open serial
+ser = serial.Serial('COM3', baudrate = 115200, timeout = 10) # open serial
 numData = 16 # numper of data points
 dataNumBytes = 4 # byte size of each data point
 rawData = bytearray(numData * dataNumBytes) # makes array for byte data, size = (numdata points)*(byte size)

@@ -47,7 +47,7 @@ class serialPlot:
 
         # File initialization
         self.file_dir = os.path.dirname(os.path.abspath(__file__))
-        self.csv_folder = 'data files'
+        self.csv_folder = 'dataFiles'
         self.file_path = os.path.join(self.file_dir, self.csv_folder, 'csvData.csv')
         self.HEADER = ['Time (ms)', 'Latitude','Longitude','Speed (kt)',
                        'AccelX (g)','AccelY','AccelZ',
@@ -136,7 +136,7 @@ class Window(Frame):
         canvas.get_tk_widget().pack(side=tk.TOP, fill=tk.BOTH, expand=1)
 
 def main():
-    portName = 'COM5'
+    portName = 'COM3'
     # portName = '/dev/ttyUSB0'
     baudRate = 115200
     maxPlotLength = 100     # number of points in x-axis of real time plot
