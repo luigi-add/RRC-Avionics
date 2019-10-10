@@ -4,7 +4,6 @@ import time, sys, struct, copy, os
 import pandas as pd
 import collections
 import serial
-import plotGPS as plotGPS
 import random
 
 '''
@@ -31,24 +30,26 @@ smallmap_side = {'top': 32.955651, 'bot': 32.937436, 'left': -106.930123, 'right
 largemap_side = {'top': 32.979024, 'bot': 32.925260, 'left': -106.967445, 'right': -106.858726}
 
 #Serial Init
-#ser = serial.Serial('COM4', baudrate = 115200,
-#                    bytesize = serial.EIGHTBITS, 
-#                    parity = serial.PARITY_NONE, 
-#                    stopbits = serial.STOPBITS_ONE, 
-#                    timeout = 10) # open serial
-#numData = 16 # numper of data points
-#dataNumBytes = 4 # byte size of each data point
-#rawData = bytearray(numData * dataNumBytes) # makes array for byte data, size = (numdata points)*(byte size)
-#dataType = 'f' # data type of data
-#dataList = []
-#dataString = []
-#csvData = []
-#plotLength = 100
-#csvMax = 5000000
+comPort = 'COM5'
+#comPort = '/dev/ttyUSB0'
+ser = serial.Serial(comPort, baudrate = 115200,
+                    bytesize = serial.EIGHTBITS, 
+                    parity = serial.PARITY_NONE, 
+                    stopbits = serial.STOPBITS_ONE, 
+                    timeout = 10) # open serial
+numData = 16 # numper of data points
+dataNumBytes = 4 # byte size of each data point
+rawData = bytearray(numData * dataNumBytes) # makes array for byte data, size = (numdata points)*(byte size)
+dataType = 'f' # data type of data
+dataList = []
+dataString = []
+csvData = []
+plotLength = 100
+csvMax = 5000000
 
-#for i in range(numData):   # give an array for each type of data and store them in a list
-#            dataList.append(collections.deque([0] * plotLength, maxlen=plotLength))
-#            dataString.append(collections.deque([0] * plotLength, maxlen=plotLength))
+for i in range(numData):   # give an array for each type of data and store them in a list
+            dataList.append(collections.deque([0] * plotLength, maxlen=plotLength))
+            dataString.append(collections.deque([0] * plotLength, maxlen=plotLength))
 
 #   ************ Initializations ***************
 
@@ -65,9 +66,12 @@ def showLogo():
     loadlogo.thumbnail(size, Image.ANTIALIAS)
     render = ImageTk.PhotoImage(loadlogo)
 
-    img = Label(LogoFrame, image=render)
+    img = Button(LogoFrame, image=render, command=lambda:exit())
     img.image = render
     img.grid(row=0, column=0, sticky=E)
+
+def exit():
+    window.destroy()
 
 # clock
 def tick():
@@ -99,44 +103,63 @@ def GUIdata():
     prs.delete(1.0,END) 
     alt.delete(1.0,END) 
 
-    lat.insert(END,csvData[1])
+    lat.insert(END,nData[1])
     tmp.insert(END,nData[13])
     spd.insert(END,nData[3])
-    lon.insert(END,csvData[2])
+    lon.insert(END,nData[2])
     prs.insert(END,nData[14])
     alt.insert(END,nData[15])
 
 # updates map on GUI
 def updateMap():
     # ************ RANDOM NUMBERS TEST - REPLACE WITH REAL COORDINATES *************
-    coordx = random.uniform(largemap_side['left'],largemap_side['right'])
-    coordy = random.uniform(largemap_side['bot'],largemap_side['top'])
-    #coordx = random.uniform(smallmap_side['left'],smallmap_side['right'])
-    #coordy = random.uniform(smallmap_side['bot'],smallmap_side['top'])
-    print(coordx,coordy)
+    #coordx = (-106.930123 - (-106.892934))/2+(-106.892934) # center x
+    #coordy = (32.955651-32.937436)/2+32.937436 # center y
+    
+    #coordx = round(random.uniform(largemap_side['left'],largemap_side['right']),6)
+    #coordy = round(random.uniform(largemap_side['bot'],largemap_side['top']),6)
+    #coordx = round(random.uniform(smallmap_side['left'],smallmap_side['right']),6)
+    #coordy = round(random.uniform(smallmap_side['bot'],smallmap_side['top']),6)
+    
     # ************ RANDOM NUMBERS TEST - REPLACE WITH REAL COORDINATES *************
+    global nData
+    coordx = nData[2]
+    coordy = nData[1]
+
+    #print(coordx,coordy)
+
 
     if (coordx < smallmap_side['left'] or coordx > smallmap_side['right']) or (coordy > smallmap_side['top'] or coordy < smallmap_side['bot']):
         latitude_length = largemap_side['top'] - largemap_side['bot'] 
         longitude_length = abs(largemap_side['left'] - largemap_side['right'])
         yScale = height/latitude_length
         xScale = width/longitude_length            
-        x = int((largemap_side['left'] - coordx) * xScale * (-1))
-        y = int((largemap_side['top'] - coordy) * yScale)
+        x = int((largemap_side['left'] - coordx) * xScale * (-1)) - int(csize[0]/2)
+        y = int((largemap_side['top'] - coordy) * yScale) - int(csize[1]/2)
         loadlargemap.paste(loadcircle, (x,y), mask=loadcircle)
         loadlargemap.save(os.path.join(file_dir, imgFolder, "Large_Map1.png"))
         map = ImageTk.PhotoImage(loadlargemap)
 
-    elif (coordx > smallmap_side['left'] or coordx < smallmap_side['right']) or (coordy < smallmap_side['top'] or coordy > smallmap_side['bot']):
+    elif (coordx >= smallmap_side['left'] or coordx <= smallmap_side['right']) or (coordy <= smallmap_side['top'] or coordy >= smallmap_side['bot']):
         latitude_length = smallmap_side['top'] - smallmap_side['bot'] 
         longitude_length = abs(smallmap_side['left'] - smallmap_side['right'])
         yScale = height/latitude_length
         xScale = width/longitude_length
-        x = int((smallmap_side['left'] - coordx) * xScale * (-1))  
-        y = int((smallmap_side['top'] - coordy) * yScale)     
+        x = int((smallmap_side['left'] - coordx) * xScale * (-1)) - int(csize[0]/2)
+        y = int((smallmap_side['top'] - coordy) * yScale) - int(csize[1]/2)
         loadsmallmap.paste(loadcircle, (x,y), mask=loadcircle)
         loadsmallmap.save(os.path.join(file_dir, imgFolder, "Small_Map1.png"))
         map = ImageTk.PhotoImage(loadsmallmap)
+
+        # For large map coordinate paste
+        latitude_length = largemap_side['top'] - largemap_side['bot'] 
+        longitude_length = abs(largemap_side['left'] - largemap_side['right'])
+        yScale = height/latitude_length
+        xScale = width/longitude_length            
+        x = int((largemap_side['left'] - coordx) * xScale * (-1)) - int(csize[0]/2)
+        y = int((largemap_side['top'] - coordy) * yScale) - int(csize[1]/2)
+        loadlargemap.paste(loadcircle, (x,y), mask=loadcircle)
+        loadlargemap.save(os.path.join(file_dir, imgFolder, "Large_Map1.png"))
     else:
         pass
 
@@ -153,7 +176,7 @@ def getSerial():
     for i in range(numData):
         data = privateData[(i*dataNumBytes):(dataNumBytes + i*dataNumBytes)] # slices array as there are 'dataNumBytes' bytes per 'numData' points 
         value, = struct.unpack(dataType, data)
-        dataString[i].append(round(value,3))
+        dataString[i].append(round(value,5))
         dataList[i].append(value) # makes data array
     global nData
     nData = [dataString[0][-1],dataString[1][-1],dataString[2][-1], # newest data value
@@ -182,6 +205,7 @@ def getSerial():
 # Window init
 window = Tk()
 window.geometry("480x320")
+window.attributes("-fullscreen",True)
 window.resizable(0, 0) # this prevents from resizing the window
 window.title("Northern Lightning")
 
@@ -255,7 +279,6 @@ tick()
 
 while 1:
     window.update()
-    #getSerial()
-    #GUIdata()
-    time.sleep(1)
+    getSerial()
+    GUIdata()
     updateMap()
